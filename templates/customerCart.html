@@ -1,0 +1,277 @@
+{% extends "customerNav.html" %}
+{% block content %}
+<link rel="stylesheet" href="../static/employeeHome.css">
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .content-wrapper {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .navbar-brand img {
+max-height: 50px; /* Ensures the image stays within the navbar height */
+max-width: 50px;
+margin-right: 10px; /* Adds some spacing between the logo and other elements */
+}
+
+.custom-nav {
+background-color: #edc15b; /* Set background color to #edc15b */
+color: black; /* Optional: Set text color for contrast */
+}
+
+.custom-nav .nav-link {
+color: black; /* Ensure nav links are visible */
+}
+
+.custom-nav .nav-link:hover {
+color: #8a6d3b; /* Optional: Add a hover effect */
+}
+
+.social-icons a {
+        color: #4a311d;
+        font-size: 2.0em;
+        padding-right: 30px;
+    }
+
+    .footer {
+        background-color: #edc15b;
+        color: #4a311d;
+        padding: 1em;
+        display: flex;
+        justify-content: space-between;
+        width: 100%; /* Ensures the footer spans the full width */
+        max-height: 70px;
+        box-sizing: border-box; /* Includes padding in width calculation */
+    }
+
+    .footer-content {
+        font-size: 1.3em;
+        font-weight: 600;
+    }
+
+    .footer-content span {
+        color: #3d1e05;
+        font-size: 1.5em;
+    }
+
+    /* From Uiverse.io by andrew-demchenk0 */ 
+.rating:not(:checked) > input {
+  position: absolute;
+  appearance: none;
+}
+
+.rating:not(:checked) > label {
+  float: right;
+  cursor: pointer;
+  font-size: 30px;
+  color: #666;
+}
+
+.rating:not(:checked) > label:before {
+  content: '★';
+}
+
+.rating > input:checked + label:hover,
+.rating > input:checked + label:hover ~ label,
+.rating > input:checked ~ label:hover,
+.rating > input:checked ~ label:hover ~ label,
+.rating > label:hover ~ input:checked ~ label {
+  color: #e58e09;
+}
+
+.rating:not(:checked) > label:hover,
+.rating:not(:checked) > label:hover ~ label {
+  color: #ff9e0b;
+}
+
+.rating > input:checked ~ label {
+  color: #ffa723;
+}
+
+.flip-card__input {
+    width: 300px; /* Wider input field */
+    height: 40px;
+    border-radius: 5px;
+    border: 2px solid var(--main-color);
+    background-color: var(--bg-color);
+    box-shadow: 4px 4px var(--main-color);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--font-color);
+    padding: 5px 10px;
+    outline: none;
+}
+.credit-card-box {
+        display: none;
+        margin-top: 20px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+    }
+
+    .credit-card-box .input_field {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .orderID{
+        margin-top: 100px;
+    }
+
+    .delete-btn{
+        background-color: rgb(240, 123, 123);
+        width: 100px;
+    }
+
+    .delete-btn:hover{
+        background-color: rgb(255, 0, 0);
+    }
+
+</style>
+
+<div class="orderID">
+    <h1>Order ID : {{order_id}}</h1>
+    {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul>
+                    {% for msg in messages %}
+                        <li style="color: red;">{{ msg }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Product ID</th>
+            <th>Product Name</th>
+            <th>Quantity</th>
+            <th>Price per Unit</th>
+            <th>Total Price</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        <form action="/Customer/remove_from_cart"  method="POST">
+            {% for x in productsL %}
+            <input type="hidden" name="product_id" value="{{ x['product_id'] }}">
+                <tr data-product-id="{{ x['product_id'] }}" >
+                    <td>{{ x['product_id'] }}</td>
+                    <td>{{ x['product_name'] }}</td>
+                    <td>{{ x['quantity'] }}</td>
+                    <td>{{ x['oneitemprice'] }}</td>
+                    <td>{{ x['price'] }}</td>
+                    <td>
+                        <button type="submit" class="delete-btn" data-product-id="{{ x['product_id'] }}">Remove</button>
+                    </td>
+                </tr>
+        {% endfor %}
+        </form>
+        
+    </tbody>
+</table>
+
+<h1>Total Cart Price = ₪ {{totalPrice}}</h1>
+
+<hr>
+
+<form action="/cart/pay" method="POST">
+    <input type="hidden" name="totalPrice" value="{{totalPrice}}">
+    <div class="checkout">
+        <h2>Checkout:</h2>
+        <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+            <select class="flip-card__input" id="paymentMethod" name="payment_method" required>
+                <option value="" disabled selected>Choose payment Method</option>
+                <option value="Cash">Cash</option>
+                <option value="Credit Card">Credit Card (add new card)</option>
+                <option value="" disabled >Your Old Cards</option>
+                {% for m in methodsL %}
+                <option value="{{ m['PaymentMethodID'] }}">{{ m['cardNum'] }}</option>
+                <!-- <input type="hidden" name="PaymentMethodID" id="PaymentMethodID" value="{{ m['PaymentMethodID'] }}"> -->
+                {% endfor %}
+            </select>
+            <!-- {% for m in methodsL %}
+                <input type="hidden" name="PaymentMethodID" value="{{ m['PaymentMethodID'] }}">
+            {% endfor %} -->
+        </div>
+
+        <!-- Credit Card Information Box -->
+        <div id="creditCardBox" class="credit-card-box">
+            <label for="cardNumber">Card Number:</label>
+            <input id="cardNumber" class="input_field" type="text" name="card_number" placeholder="0000 0000 0000 0000" required>
+            
+            <label for="expiryDate">Expiry Date:</label>
+            <input id="expiryDate" class="input_field" type="text" name="expiry_date" placeholder="MM/YY" required>
+            
+            <label for="cvv">CVV:</label>
+            <input id="cvv" class="input_field" type="text" name="cvv" placeholder="CVV" required>
+        </div>
+
+        <button class="purchase--btn" type="submit" >Checkout</button>
+    </div>
+
+    <!-- Rating Section -->
+    <div style="width: 500px; display: flex; gap: 10px; align-items: bottom; margin-top: 100px;">
+        <h2>Rate our Website</h2>
+        <div class="rating">
+            <input value="5" name="rate" id="star5" type="radio">
+            <label title="text" for="star5"></label>
+            <input value="4" name="rate" id="star4" type="radio">
+            <label title="text" for="star4"></label>
+            <input value="3" name="rate" id="star3" type="radio">
+            <label title="text" for="star3"></label>
+            <input value="2" name="rate" id="star2" type="radio">
+            <label title="text" for="star2"></label>
+            <input value="1" name="rate" id="star1" type="radio">
+            <label title="text" for="star1"></label>
+        </div>
+    </div>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const paymentMethod = document.getElementById('paymentMethod');
+        const creditCardBox = document.getElementById('creditCardBox');
+
+        paymentMethod.addEventListener('change', function () {
+            if (this.value === 'Credit Card') {
+                creditCardBox.style.display = 'block';
+            } else {
+                creditCardBox.style.display = 'none';
+            }
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+    const paymentMethod = document.getElementById('paymentMethod');
+    const creditCardBox = document.getElementById('creditCardBox');
+    const creditCardInputs = creditCardBox.querySelectorAll('input');
+    
+    paymentMethod.addEventListener('change', function () {
+        if (this.value === 'Credit Card') {
+            creditCardBox.style.display = 'block';
+            // Make sure credit card fields are required when "Credit Card" is selected
+            creditCardInputs.forEach(input => input.setAttribute('required', 'true'));
+        } else {
+            creditCardBox.style.display = 'none';
+            // Remove the required attribute from credit card fields when "Cash" is selected
+            creditCardInputs.forEach(input => input.removeAttribute('required'));
+        }
+    });
+});
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Navigation - LOKMA Store</title>
+    <link rel="stylesheet" href="../static/manager.css">
+    {% block additional_styles %}{% endblock %}
+</head>
+<body>
+    <nav class="custom-nav">
+        <ul class="nav-list">
+            <li><a href="/manager_dashboard">Home</a></li>
+            <li><a href="/manager_dashboard/order_management">Order Management</a></li>
+            <li><a href="/manager_dashboard/supplier_management">Suppliers Management</a></li>
+            <li><a href="/manager_dashboard/employee_management">Employee Management</a></li>
+            <li><a href="/manager_dashboard/Report">Report of Store</a></li>
+            <li><a href="/logout">Logout</a></li> <!-- Logout option -->
+        </ul>
+    </nav>    
+    <div class="content-section">
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+</html>

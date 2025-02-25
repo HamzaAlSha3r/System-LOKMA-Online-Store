@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block content%}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Page Title</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel="stylesheet" href="../static/landingPage.css">
+</head>
+<body>
+    <section class="main">
+        <h1>Welcome to ,</h1>
+    </section>
+
+    <h1 class="heading">What we offer</h1>
+    <div class="catigories">
+        
+        <div class="offercard">
+            <div class="card-details">
+              <p class="text-title">LOKMA & Sweets</p>
+            </div>
+            <button class="card-button">Explore</button>
+          </div>
+          <div class="offercard">
+            <div class="card-details">
+              <p class="text-title">Hot Drinks</p>
+            </div>
+            <button class="card-button">Explore</button>
+          </div>
+          <div class="offercard">
+            <div class="card-details">
+              <p class="text-title">Smothies</p>
+            </div>
+            <button class="card-button">Explore</button>
+          </div>
+          <div class="offercard">
+            <div class="card-details">
+              <p class="text-title">Milk Shakes</p>
+            </div>
+            <button class="card-button">Explore</button>
+          </div>
+    </div>
+
+    <h1 class="heading">LOKMA & Sweets</h1>
+    <div class="row">
+        <!-- Single Item -->
+        {% for x in sweetsL %}
+            <div class="col">
+                <div class="card">
+                    <!-- Image Container -->
+                    <div class="image-container"><img src="/static/{{x['img'] }}.png" alt="No image available"></div>
+                    <!-- Details -->
+                    <div class="details">
+                        <div class="title">{{ x['product_name'] }}</div>
+                        <input type="hidden" name="product_name" id="product_name" value="{{ x['product_name'] }}">
+                        <div class="size">
+                            <span>Topping Nuts: {{ x['nuts_type'] }}</span>
+                            <input type="hidden" name="nuts_type" id="nuts_type" value="{{ x['nuts_type'] }}">
+                        </div>
+                        <div class="size">
+                            <span>Chocolate: {{ x['chocolate_type'] }}</span>
+                            <input type="hidden" name="chocolate_type" id="chocolate_type" value="{{ x['chocolate_type'] }}">
+                        </div>
+                        <div class="price">Price: ₪ {{ x['price'] }}</div>
+                        <div class="button-container">
+                            <a  href="/needToLogin" type="submit" class="button" >Add to Cart</a>
+                            <!-- <button type="submit" class="button">Add to Cart</button> -->
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        
+        {% endfor %}
+    </div>
+
+    <h1 class="heading">Hot Drinks</h1>
+    <div class="row">
+        <!-- Single Item -->
+        {% for x in hotDrinksL %}
+            <div class="col">
+                <div class="card">
+                    <!-- <div class="image-container" style="background-image: url('/static/{{ x["product_name"] }}.jpg');"></div> -->
+                    <div class="image-container"><img src="/static/{{x['img'] }}.png" alt="No image avilable"></div>
+    
+                    <div class="details">
+                        <div class="title">{{ x['product_name'] }}</div>
+                        <input type="hidden" name="product_name" id="product_name" value="{{ x['product_name'] }}">
+                        <div class="size">
+                            <span>State : {{ x['state'] }}</span>
+                            <input type="hidden" name="state" id="state" value="{{ x['state'] }}">
+                        </div>
+                        <div class="size">
+                            <span>is Sugar Free : {{ x['is_sugar_free'] }}</span>
+                            <input type="hidden" name="is_sugar_free" id="is_sugar_free" value="{{ x['is_sugar_free'] }}">
+                        </div>
+                        <div class="price">Price: ₪ {{ x['price'] }}</div>
+                        <div class="button-container">
+                            <a  href="/needToLogin" type="submit" class="button" >Add to Cart</a>
+                            <!-- <button type="submit" class="button" >Add to Cart</button> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+        {% endfor %}
+    </div>
+
+
+    <h1 class="heading">Smothies</h1>
+    <div class="row">
+        <!-- Single Item -->
+        {% for x in smothiesL %}
+
+            <div class="col">
+                <div class="card">
+                    <!-- <div class="image-container" style="background-image: url('/static/{{ x["product_name"] }}.jpg');"></div> -->
+                    <div class="image-container"><img src="/static/{{x['img'] }}.png" alt="No image avilable"></div>
+    
+                    <div class="details">
+                        <div class="title">{{ x['product_name'] }}</div>
+                        <input type="hidden" name="product_name" id="product_name" value="{{ x['product_name'] }}">
+                        <div class="size">
+                            <span>State : {{ x['state'] }}</span>
+                            <input type="hidden" name="state" id="state" value="{{ x['state'] }}">
+                        </div>
+                        <div class="size">
+                            <span>is Sugar Free : {{ x['is_sugar_free'] }}</span>
+                            <input type="hidden" name="is_sugar_free" id="is_sugar_free" value="{{ x['is_sugar_free'] }}">
+                        </div>
+                        <div class="price">Price: ₪ {{ x['price'] }}</div>
+                        <div class="button-container">
+                            <a  href="/needToLogin" type="submit" class="button" >Add to Cart</a>
+                            <!-- <button type="submit" class="button" >Add to Cart</button> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+       
+        {% endfor %}
+    </div>
+
+
+    <h1 class="heading">Milk Shakes</h1>
+    <div class="row">
+        <!-- Single Item -->
+        {% for x in milksL %}
+        
+            <div class="col">
+                <div class="card">
+                    <!-- <div class="image-container" style="background-image: url('/static/{{ x["product_name"] }}.jpg');"></div> -->
+                    <div class="image-container"><img src="/static/{{x['img'] }}.png" alt="No image avilable"></div>
+    
+                    <div class="details">
+                        <div class="title">{{ x['product_name'] }}</div>
+                        <input type="hidden" name="product_name" id="product_name" value="{{ x['product_name'] }}">
+                        <div class="size">
+                            <span>State : {{ x['state'] }}</span>
+                            <input type="hidden" name="state" id="state" value="{{ x['state'] }}">
+                        </div>
+                        <div class="size">
+                            <span>is Sugar Free : {{ x['is_sugar_free'] }}</span>
+                            <input type="hidden" name="is_sugar_free" id="is_sugar_free" value="{{ x['is_sugar_free'] }}">
+                        </div>
+                        <div class="price">Price: ₪ {{ x['price'] }}</div>
+                        <div class="button-container">
+                            <a  href="/needToLogin" type="submit" class="button" >Add to Cart</a>
+                            <!-- <button  type="submit" class="button" >Add to Cart</button> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        
+        {% endfor %}
+    </div>
+
+
+    <!-- {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <ul>
+                        {% for msg in messages %}
+                            <li style="color: red;">{{ msg }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %} -->
+    
+</body>
+</html>
+{% endblock %}

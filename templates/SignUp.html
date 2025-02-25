@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Page Title</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel='stylesheet' type='text/css' media='screen' href='../static/loginstyle.css'>
+</head>
+<body class="signup">
+<div class="form-box">
+<form class="form" action="/SignUp" method="POST">
+    <span class="title">Sign up</span>
+    <span class="subtitle">Welcome to LOKMA, Create your account</span>
+    <div class="form-container">
+            <input type="text" class="input" id="name" name="name" placeholder="Full Name">
+            <input type="text" class="input" id="phoneNum" name="phoneNum" placeholder="phone">
+            <input type="text" class="input" id="address" name="address" placeholder="address">
+			<input type="email" class="input" id="email" name="email" placeholder="Email">
+			<input type="password" class="input" id="pass" name="pass" placeholder="Password">
+    </div>
+    <button type="submit" >Sign up</button>
+</form>
+<div class="form-section">
+</div>
+</div>
+
+</body>
+</html>
+{% endblock %}

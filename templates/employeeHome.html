@@ -1,0 +1,94 @@
+{% extends "employeeNav.html" %}
+{% block content%}
+<link rel="stylesheet" href="/static/employeeHome.css">
+
+    <h1>Welcome Employee {{empName}}, your ID is : {{empID}}</h1>
+    <h1>Salary = {{salary}}</h1>
+
+    <br>
+    <br>
+    <h2>Sweets you inserted</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Product ID</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Nuts</th>
+            <th>Chocolate</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for x in sweetsL %}
+        <tr>
+            <td>{{ x['product_id'] }}</td>
+            <td>{{ x['product_name'] }}</td>
+            <td>${{ x['price'] }}</td>
+            <td>{{ x['nuts_type'] }}</td>
+            <td>{{ x['chocolate_type'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Add a horizontal line between tables -->
+<hr>
+
+<h2>Drinks you inserted</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Product ID</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>State</th>
+            <th>Is Sugar Free</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for x in drinksL %}
+        <tr>
+            <td>{{ x['product_id'] }}</td>
+            <td>{{ x['product_name'] }}</td>
+            <td>${{ x['price'] }}</td>
+            <td>{{ x['state'] }}</td>
+            <td>{{ x['is_sugar_free'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Add another horizontal line -->
+<hr>
+
+<h2>Orders you Placed from Suppliers </h2>
+<table>
+    <thead>
+        <tr>
+            <th>Order Date</th>
+            <th>Supplier ID</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Product Name</th>
+            <th>Quantity</th>
+            <th>Price</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for x in ordersL %}
+        <tr>
+            <td>{{ x['buy_date'] }}</td>
+            <td>{{ x['supplier_id'] }}</td>
+            <td>{{ x['SupplierName'] }}</td>
+            <td>{{ x['phone'] }}</td>
+            <td>{{ x['product_name'] }}</td>
+            <td>{{ x['quantity'] }}</td>
+            <td>${{ x['price'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+
+{% endblock %}

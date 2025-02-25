@@ -1,0 +1,200 @@
+{% extends "customerNav.html" %}
+{% block content %}
+<link rel="stylesheet" href="../static/landingPage.css">
+<section class="main">
+    <h1>Welcome <span style="color:#e39d45 ;">{{customerName}}</span> to ,</h1>
+</section>
+
+{% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul>
+                    {% for msg in messages %}
+                        <li style="color: red;">{{ msg }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+<h1 class="heading">What we offer</h1>
+<div class="catigories">
+    <div class="offercard">
+        <div class="card-details">
+            <p class="text-title" >LOKMA & Sweets</p>
+        </div>
+        <button class="card-button">Explore</button>
+    </div>
+    <div class="offercard">
+        <div class="card-details">
+            <p class="text-title">Hot Drinks</p>
+        </div>
+        <button class="card-button">Explore</button>
+    </div>
+    <div class="offercard">
+        <div class="card-details">
+            <p class="text-title">Smothies</p>
+        </div>
+        <button class="card-button">Explore</button>
+    </div>
+    <div class="offercard">
+        <div class="card-details">
+            <p class="text-title">Milk Shakes</p>
+        </div>
+        <button class="card-button">Explore</button>
+    </div>
+</div>
+
+<h1 class="heading">LOKMA & Sweets</h1>
+<div class="row">
+    {% if sweetsL %}
+        {% for x in sweetsL %}
+        <form action="/Customer/add_sweet_to_cart" method="POST">
+            <div class="col">
+                <div class="card">
+                    <!-- Image Container -->
+                    <div class="image-container"><img src="/static/{{x['img'] or 'default_image'}}.png" alt="No image available"></div>
+                    
+                    <!-- Details -->
+                    <div class="details">
+                        <div class="title">{{ x['product_name'] }}</div>
+                        <input type="hidden" name="product_name" value="{{ x['product_name'] }}">
+                        <div class="size">
+                            <span>Topping Nuts: {{ x['nuts_type'] }}</span>
+                            <input type="hidden" name="nuts_type" value="{{ x['nuts_type'] }}">
+                        </div>
+                        <div class="size">
+                            <span>Chocolate: {{ x['chocolate_type'] }}</span>
+                            <input type="hidden" name="chocolate_type" value="{{ x['chocolate_type'] }}">
+                            <input type="hidden" name="product_id" value="{{ x['product_id'] }}">
+                        </div>
+                        <div class="price">Price: ₪ {{ x['price'] }}</div>
+                        <input type="hidden" name="price" value="{{ x['price'] }}">
+                        <!-- Quantity Input -->
+                        <div class="quantity-container">
+                            <label>Quantity:</label>
+                            <input class="quantity_in" type="number" name="quantity" min="1" value="1">
+                        </div>
+                        <div class="button-container">
+                            <button type="submit" class="button">Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<h1 class="heading">Hot Drinks</h1>
+<div class="row">
+    {% if hotDrinksL %}
+        {% for x in hotDrinksL %}
+        <form action="/Customer/add_drink_to_cart" method="POST">
+            <div class="col">
+                <div class="card">
+                    <div class="image-container"><img src="/static/{{x['img'] or 'default_image'}}.png" alt="No image available"></div>
+                    <div class="details">
+                        <div class="title">{{ x['product_name'] }}</div>
+                        <input type="hidden" name="product_name" value="{{ x['product_name'] }}">
+                        <div class="size">
+                            <span>State: {{ x['state'] }}</span>
+                            <input type="hidden" name="state" value="{{ x['state'] }}">
+                            <input type="hidden" name="product_id" value="{{ x['product_id'] }}">
+                        </div>
+                        <div class="size">
+                            <span>Is Sugar Free: {{ x['is_sugar_free'] }}</span>
+                            <input type="hidden" name="is_sugar_free" value="{{ x['is_sugar_free'] }}">
+                        </div>
+                        <div class="price">Price: ₪ {{ x['price'] }}</div>
+                        <input type="hidden" name="price" value="{{ x['price'] }}">
+                        <!-- Quantity Input -->
+                        <div class="quantity-container">
+                            <label>Quantity:</label>
+                            <input class="quantity_in" type="number" name="quantity" min="1" value="1">
+                        </div>
+                        <div class="button-container">
+                            <button type="submit" class="button">Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<h1 class="heading">Smothies</h1>
+<div class="row">
+    {% if smothiesL %}
+        {% for x in smothiesL %}
+        <form action="/Customer/add_drink_to_cart" method="POST">
+            <div class="col">
+                <div class="card">
+                    <div class="image-container"><img src="/static/{{x['img'] or 'default_image'}}.png" alt="No image available"></div>
+                    <div class="details">
+                        <div class="title">{{ x['product_name'] }}</div>
+                        <input type="hidden" name="product_name" value="{{ x['product_name'] }}">
+                        <div class="size">
+                            <span>State: {{ x['state'] }}</span>
+                            <input type="hidden" name="state" value="{{ x['state'] }}">
+                            <input type="hidden" name="product_id" value="{{ x['product_id'] }}">
+                        </div>
+                        <div class="size">
+                            <span>Is Sugar Free: {{ x['is_sugar_free'] }}</span>
+                            <input type="hidden" name="is_sugar_free" value="{{ x['is_sugar_free'] }}">
+                        </div>
+                        <div class="price">Price: ₪ {{ x['price'] }}</div>
+                        <input type="hidden" name="price" value="{{ x['price'] }}">
+                        <!-- Quantity Input -->
+                        <div class="quantity-container">
+                            <label>Quantity:</label>
+                            <input class="quantity_in" type="number" name="quantity" min="1" value="1">
+                        </div>
+                        <div class="button-container">
+                            <button type="submit" class="button">Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<h1 class="heading">Milk Shakes</h1>
+<div class="row">
+    {% if milksL %}
+        {% for x in milksL %}
+        <form action="/Customer/add_drink_to_cart" method="POST">
+            <div class="col">
+                <div class="card">
+                    <div class="image-container"><img src="/static/{{x['img'] or 'default_image'}}.png" alt="No image available"></div>
+                    <div class="details">
+                        <div class="title">{{ x['product_name'] }}</div>
+                        <input type="hidden" name="product_name" value="{{ x['product_name'] }}">
+                        <div class="size">
+                            <span>State: {{ x['state'] }}</span>
+                            <input type="hidden" name="state" value="{{ x['state'] }}">
+                            <input type="hidden" name="product_id" value="{{ x['product_id'] }}">
+                        </div>
+                        <div class="size">
+                            <span>Is Sugar Free: {{ x['is_sugar_free'] }}</span>
+                            <input type="hidden" name="is_sugar_free" value="{{ x['is_sugar_free'] }}">
+                        </div>
+                        <div class="price">Price: ₪ {{ x['price'] }}</div>
+                        <input type="hidden" name="price" value="{{ x['price'] }}">
+                        <!-- Quantity Input -->
+                        <div class="quantity-container">
+                            <label>Quantity:</label>
+                            <input class="quantity_in" type="number" name="quantity" min="1" value="1">
+                        </div>
+                        <div class="button-container">
+                            <button type="submit" class="button">Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        {% endfor %}
+    {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,104 @@
+.login {
+    font-family: 'Arial', sans-serif;
+    background-color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Ensures full-height centering */
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    padding-top: 100px; /* Adjust based on your navbar height */
+}
+
+.login-container {
+    min-width: 700px;
+    max-width: 600px; /* Increased width for a larger container */
+    margin: 0 auto;
+    padding: 40px; /* Add more padding for a spacious layout */
+    box-sizing: border-box;
+}
+
+.login-card {
+    background-color: #f1f7fe;
+    border-radius: 12px; /* Slightly larger corner rounding */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); /* Enhance the shadow for better visibility */
+    padding: 40px; /* Increase padding inside the card */
+    text-align: center;
+}
+
+
+.store-name {
+    font-size: 28px; /* Increase font size */
+    font-weight: bold;
+    color: #ffb300;
+    margin-bottom: 25px; /* Add more spacing below the title */
+}
+
+.form-group {
+    margin-bottom: 20px; /* Add more spacing between form fields */
+    text-align: left;
+}
+
+label {
+    display: block;
+    font-size: 16px; /* Increase font size for better readability */
+    margin-bottom: 8px;
+    color: #333;
+}
+
+input[type="email"],
+input[type="password"],
+select {
+    width: 100%;
+    padding: 12px; /* Increase padding for larger input fields */
+    font-size: 16px; /* Increase font size */
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+}
+
+input[type="email"]:focus,
+input[type="password"]:focus,
+select:focus {
+    border-color: #edc15b;
+    outline: none;
+}
+
+.btn-login {
+    width: 100%;
+    padding: 12px; /* Increase button padding */
+    font-size: 18px; /* Larger button text */
+    font-weight: bold;
+    background-color: #edc15b;
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-login:hover {
+    background-color: #ffb300;
+}
+
+.additional-links {
+    margin-top: 25px; /* Add more spacing above the links */
+}
+
+.additional-links a {
+    text-decoration: none;
+    color: #edc15b;
+    font-weight: bold;
+    font-size: 14px; /* Slightly larger text */
+}
+
+.additional-links a:hover {
+    text-decoration: underline;
+}

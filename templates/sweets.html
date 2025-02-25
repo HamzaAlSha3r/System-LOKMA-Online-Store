@@ -1,0 +1,87 @@
+{% extends "employeeNav.html" %}
+{% block content %}
+<link rel="stylesheet" href="../static/employeeHome.css">
+<h1>Sweets you inserted</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Product ID</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Nuts</th>
+            <th>Chocloate</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for x in sweetsL %}
+        <tr>
+            <td>{{ x['product_id'] }}</td>
+            <td>{{ x['product_name'] }}</td>
+            <td>${{ x['price'] }}</td>
+            <td>{{ x['nuts_type'] }}</td>
+            <td>{{ x['chocolate_type'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h1>Drinks you inserted</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Product ID</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>State</th>
+            <th>Is Sugar Free</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for x in drinksL %}
+        <tr>
+            <td>{{ x['product_id'] }}</td>
+            <td>{{ x['product_name'] }}</td>
+            <td>${{ x['price'] }}</td>
+            <td>{{ x['state'] }}</td>
+            <td>{{ x['is_sugar_free'] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
+
+
+<!-- <h2>Add New Sweet</h2>
+<form method="POST" action="/add_sweet">
+    <div class="form-heading">Fill the details below</div>
+    <label for="product_id">Product ID:</label>
+    <input type="number" id="product_id" name="product_id" required><br>
+
+    <label for="product_name">Name:</label>
+    <input type="text" id="product_name" name="product_name" required><br>
+
+    <label for="price">Price:</label>
+    <input type="number" step="0.01" id="price" name="price" required><br>
+
+    <label for="state">State:</label>
+    <input type="text" id="state" name="state" required><br>
+
+    <label for="is_sugar_free">Is Sugar Free:</label>
+    <select id="is_sugar_free" name="is_sugar_free">
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+    </select><br>
+
+    <button type="submit">Add Sweet</button>
+</form>
+
+<h2>Delete Product</h2>
+<form method="POST" action="/delete_sweet">
+    <div class="form-heading">Enter Product ID to Delete</div>
+    <label for="delete_product_id">Product ID:</label>
+    <input type="number" id="delete_product_id" name="delete_product_id" required><br>
+
+    <button type="submit">Delete Product</button>
+</form> -->
+ 

@@ -1,0 +1,58 @@
+{% extends "employeeNav.html" %}
+{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Order from Supplier</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="../static/insertProduct.css">
+    <script>
+        // Function to enable the product name and quantity fields when a supplier is selected
+        function enableFields() {
+            var supplierSelect = document.getElementById("supplierName");
+            var productSelect = document.getElementById("product_name");
+            var quantityInput = document.getElementById("quantity");
+
+            // Enable the product select and quantity input if a supplier is selected
+            if (supplierSelect.value !== "") {
+                productSelect.disabled = false;
+                quantityInput.disabled = false;
+
+                // Submit the form after selecting a supplier
+                document.forms[0].submit();
+            } else {
+                // Disable the product select and quantity input if no supplier is selected
+                productSelect.disabled = true;
+                quantityInput.disabled = true;
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="empName">
+        <h1>Employee : {{empName}}</h1>
+        <h1>ID : {{empID}}</h1>
+    </div>
+    <div class="wrapper">
+        <div class="flip-card__front">
+            <div class="title">Order from Supplier</div>
+            <form class="flip-card__form" action="/employee/getSupplierProducts" method="POST">
+                <select class="flip-card__input" name="supplierName" id="supplierName" onchange="enableFields()">
+                    <option value="" disabled selected>Choose Supplier</option>
+                    {% for s in suppliersL %}
+                        <option value="{{ s['supplier_id'] }}">{{ s['SupplierName'] }}</option>
+                    {% endfor %}
+                    
+                </select>
+                <select class="flip-card__input" name="product_name" id="product_name" disabled>
+                </select>
+                <input class="flip-card__input" name="quantity" id="quantity" placeholder="Quantity" type="number" min="1" disabled>
+                <button class="flip-card__btn">Place Order</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+{% endblock %}

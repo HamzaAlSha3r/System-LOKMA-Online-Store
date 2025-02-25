@@ -1,0 +1,35 @@
+{% extends "customerNav.html" %}
+{% block content %}
+<link rel="stylesheet" href="../static/employeeHome.css">
+<style>
+    
+</style>
+<section class="main">
+    <h1><span style="color:#ee8505 ;">{{customerName}}</span> Orders History</h1>
+</section>
+
+<table>
+    <thead>
+        <tr>
+            <th>Order ID</th>
+            <th>Total Amount</th>
+            <th>Payment Date</th>
+            <th>Payment Method</th>
+            <th>Card number</th>
+            <th>Rating</th>
+        </tr>
+    </thead>
+    <tbody>
+            {% for x in ordersL %}
+                <tr data-product-id="" >
+                    <td>{{ x['order_id'] }}</td>
+                    <td>{{ x['total_amount'] }}</td>
+                    <td>{{ x['PaymentDate'] }}</td>
+                    <td>{{ x['MethodType'] }}</td>
+                    <td>{{ x['cardnum'] }}</td>
+                    <td>{{ x['rating'] }}</td>
+                </tr>
+        {% endfor %} 
+    </tbody>
+</table>
+{% endblock %}

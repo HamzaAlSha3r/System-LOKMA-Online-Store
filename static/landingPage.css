@@ -1,0 +1,235 @@
+.main {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: flex-start; /* Align content at the top */
+    background: url(/static/homeback.jpg) no-repeat;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    position: relative;
+    padding-top: 20px; /* Prevent overlap with the top edge */
+}
+
+.main h1 {
+    color: #4a311d; /* Adjust text color */
+    text-align: center;
+    font-size: 36px; /* Adjust size */
+    margin-top: 150px; /* Space below the top edge */
+}
+
+.social-icons {
+    position: absolute;
+    bottom: 30px; /* Adjust distance from the bottom edge */
+    left: 50%; /* Position at the horizontal center */
+    transform: translateX(-50%); /* Center align horizontally */
+    display: flex;
+    gap: 30px; /* Space between icons */
+}
+
+.social-icons a {
+    color: #4a311d;
+    font-size: 2.0em;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.social-icons a:hover {
+    color: #8b5e3c; /* Optional: Change color on hover */
+}
+
+/* From Uiverse.io by alexruix */ 
+.offercard {
+    width: 190px;
+    height: 150px;
+    border-radius: 20px;
+    background: #f1f7fe;
+    position: relative;
+    padding: 1.8rem;
+    border: 2px solid #9799a0;
+    transition: 0.5s ease-out;
+    overflow: visible;
+   }
+
+   .card-button {
+    transform: translate(-50%, 125%);
+    width: 60%;
+    border-radius: 1rem;
+    border: none;
+    background-color: #edc15b;
+    color: #fff;
+    font-size: 1rem;
+    padding: .5rem 1rem;
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    opacity: 0;
+    transition: 0.3s ease-out;
+   }
+
+   .card-button:hover{
+    color: #fcb203;
+   }
+   
+   .text-body {
+    color: rgb(134, 134, 134);
+   }
+   
+   /*Text*/
+   .text-title {
+    font-size: 1.5em;
+    font-weight: bold;
+   }
+   
+   /*Hover*/
+   .offercard:hover {
+    border-color: #edc15b;
+    box-shadow: 0 4px 18px 0 rgba(0, 0, 0, 0.25);
+   }
+   
+   .offercard:hover .card-button {
+    border-color: #ffb300;
+    transform: translate(-50%, 50%);
+    opacity: 1;
+   }
+
+   .catigories{
+    display: flex;
+    padding: 50px;
+    align-items: center;
+    gap: 50px;
+   }
+
+   .heading{
+    margin-top: 20px;
+    color:#edc15b ;
+   }
+
+   .row {
+    display: flex;
+    flex-wrap: wrap; /* Allow cards to wrap to the next line */
+    justify-content: center; /* Center cards horizontally in each row */
+    gap: 10px; /* Add spacing between cards */
+    margin: 10px;
+    padding: 15px;
+}
+
+.col {
+    width: 300px; /* Increased the width to make the cards wider */
+    margin: 20px;
+    flex: 0 0 auto; /* Prevent resizing */
+}
+
+
+.card {
+    background-color: #fff;
+    border-radius: 8px;
+    border-color: #edc15b;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.2s;
+    text-align: center;
+    height: 410px; /* Keep height as is, or adjust if necessary */
+    width: 100%; /* Ensure the card takes the full width of the .col container */
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    border-color: #ffb300;
+}
+
+.image-container {
+    height: 200px; /* Adjust height proportionally for the wider card */
+    overflow: hidden;
+    background: no-repeat center/cover;
+   
+}
+
+.image-container img {
+    width: 100%; /* Set desired width */
+    height: 100%; /* Set desired height */
+    object-fit: fill; /* Ensures the image fills the container without distortion */
+}
+
+.details {
+    padding: 15px;
+}
+
+.title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #ffc107;
+    margin-bottom: 10px;
+}
+
+.size {
+    margin-bottom: 10px;
+}
+
+.size span {
+    font-size: 13px;
+    font-weight: bold;
+    color: #666;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.list-size {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin: 0;
+}
+
+.item-list {
+    display: inline-block;
+}
+
+.item-list-button {
+    background-color: #f8f9fa;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.item-list-button:hover {
+    background-color: #ffc107;
+    color: #fff;
+}
+
+.price {
+    font-size: 14px;
+    color: #4e54c8;
+    font-weight: bold;
+}
+
+.button-container {
+    margin-top: 10px;
+}
+
+.button {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 5px;
+    background-color: #ffc107;
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.button:hover {
+    background-color: #e0a800;
+}
+
+.quantity_in{
+    width: 35px;
+}

@@ -1,0 +1,338 @@
+{% extends "MangerNav.html" %}
+
+{% block additional_styles %}
+<style>
+    body {
+        background: url("../static/order_management_background.jpg") no-repeat center center fixed;
+        background-size: cover;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    /* Container that holds everything */
+    .container {
+        max-width: 1000px;
+        margin: 20px auto;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        overflow: hidden;
+    }
+
+    /* More advanced heading style */
+    h1.page-title {
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 36px;
+        color: #444;
+        font-weight: 900;
+        position: relative;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+    h1.page-title::before {
+        content: "";
+        position: absolute;
+        bottom: 0; left: 50%;
+        transform: translateX(-50%);
+        width: 100px;
+        height: 4px;
+        background: linear-gradient(90deg, #ffcc33, #ff9900);
+        border-radius: 2px;
+    }
+
+    .summary-section {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        margin-bottom: 30px;
+        gap: 15px;
+    }
+
+    .summary-card {
+        flex: 1 1 200px;
+        background: linear-gradient(135deg, #ffe98a, #ffa949);
+        border-radius: 10px;
+        padding: 20px;
+        color: #333;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        text-align: center;
+        position: relative;
+    }
+    .summary-card-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        text-transform: uppercase;
+    }
+    .summary-card-value {
+        font-size: 24px;
+        font-weight: 900;
+        color: #fff;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+
+    /* Form styling */
+    .employee-form {
+        margin-bottom: 30px;
+        max-width: 600px;
+        margin-left: auto; 
+        margin-right: auto; 
+    }
+
+    .employee-form h2 {
+        font-size: 20px;
+        margin-bottom: 10px;
+        font-weight: 700;
+        color: #555;
+        text-align: center;
+    }
+
+    .employee-form label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+
+    .employee-form input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+
+    /* Center the button and add a click (active) animation */
+    .employee-form button {
+        display: block;          /* So margin: 0 auto can center it */
+        margin: 0 auto;          /* center horizontally */
+        background-color: #28a745;
+        color: #fff;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .employee-form button:hover {
+        background-color: #218838;
+        transform: scale(1.02);
+    }
+
+    .employee-form button:active {
+        transform: scale(0.97);
+    }
+
+    /* Table container */
+    .table-container {
+        overflow-x: auto;
+        margin-top: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+        font-size: 14px;
+    }
+
+    th {
+        background-color: #ffa949;
+        color: #fff;
+        text-transform: uppercase;
+    }
+
+    tr:hover {
+        background-color: #f9f9f9;
+        transition: 0.3s;
+    }
+
+    td {
+        color: #555;
+    }
+
+    @media (max-width: 768px) {
+        .summary-section {
+            flex-direction: column;
+            align-items: center;
+        }
+        .summary-card {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+    }
+    .delete-btn {
+    background-color: #dc3545; /* red */
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-left: 5px; /* slight spacing if you have more buttons */
+}
+.delete-btn:hover {
+    background-color: #c82333;
+    transform: scale(1.02);
+}
+.delete-btn:active {
+    transform: scale(0.97);
+}
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Employee Management</h1>
+
+    <!-- Summary Cards -->
+    <div class="summary-section">
+        <div class="summary-card">
+            <h3 class="summary-card-title">
+                <i class="fas fa-users"></i>
+                Total Employees
+            </h3>
+            <div class="summary-card-value">{{ total_employees }}</div>
+        </div>
+        <div class="summary-card">
+            <h3 class="summary-card-title">
+                <i class="fas fa-dollar-sign"></i>
+                Total Salaries
+            </h3>
+            <div class="summary-card-value">{{ total_salary }}</div>
+        </div>
+    </div>
+
+    <!-- Form to Add New Employee -->
+    <div class="employee-form">
+        <h2>Add New Employee</h2>
+        <form method="POST" action="/manager_dashboard/employee_management">
+            <label for="emp_name">Employee Name</label>
+            <input type="text" id="emp_name" name="emp_name" placeholder="e.g., John Doe" required />
+
+            <label for="phone">Phone</label>
+            <input type="text" id="phone" name="phone" placeholder="e.g., 123456789" required />
+
+            <label for="address">Address</label>
+            <input type="text" id="address" name="address" placeholder="e.g., 123 Main St" required />
+
+            <label for="salary">Salary</label>
+            <input type="number" id="salary" name="salary" placeholder="e.g., 3000" required />
+
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="e.g., user@example.com" required />
+
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required />
+
+            <button type="submit">Add Employee</button>
+        </form>
+    </div>
+
+    <!-- Display All Employees in a Table -->
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Emp ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Salary</th>
+                    <!-- optional: actions column for editing/deleting -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr>
+                    <td>{{ emp[0] }}</td> <!-- emp_id -->
+                    <td>{{ emp[1] }}</td> <!-- emp_name -->
+                    <td>{{ emp[2] }}</td> <!-- phone -->
+                    <td>{{ emp[3] }}</td> <!-- address -->
+                    <td>{{ emp[4] }}</td> <!-- salary -->
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Emp ID</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Salary</th>
+                <th>Actions</th> <!-- column for delete & update salary -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for emp in employees %}
+            <tr>
+                <td>{{ emp[0] }}</td> <!-- emp_id -->
+                <td>{{ emp[1] }}</td> <!-- emp_name -->
+                <td>{{ emp[2] }}</td> <!-- phone -->
+                <td>{{ emp[3] }}</td> <!-- address -->
+                <td>{{ emp[4] }}</td> <!-- salary -->
+                <td>
+                    <!-- DELETE BUTTON -->
+                    <form 
+                        method="POST" 
+                        action="/manager_dashboard/employee_management/delete/{{ emp[0] }}"
+                        style="display:inline;"
+                    >
+                        <button class="delete-btn" type="submit">
+                            Delete
+                        </button>
+                    </form>
+
+                    <!-- UPDATE SALARY FORM -->
+                    <!-- We put a small input and an Update button side-by-side -->
+                    <form 
+                        method="POST"
+                        action="/manager_dashboard/employee_management/update_salary/{{ emp[0] }}"
+                        class="update-salary-form"
+                    >
+                        <input 
+                            type="number" 
+                            name="new_salary" 
+                            placeholder="New ₪" 
+                            min="0" 
+                            style="width: 80px;"
+                            required
+                        />
+                        <button class="update-btn" type="submit">
+                            Update Salary
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+{% endblock %}

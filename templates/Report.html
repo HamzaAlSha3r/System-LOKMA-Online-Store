@@ -1,0 +1,230 @@
+{% extends "MangerNav.html" %}
+{% block additional_styles %}
+<style>
+    body {
+        background: url("../static/order_management_background.jpg") no-repeat center center fixed;
+        background-size: cover;
+        margin: 0;
+        font-family: 'Helvetica', sans-serif;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 30px auto;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    h1.report-title {
+        text-align: center;
+        margin-bottom: 40px;
+        font-size: 32px;
+        color: #444;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        position: relative;
+    }
+
+    .stats-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: space-around;
+        margin-bottom: 40px;
+    }
+
+    .stat-card {
+        flex: 1 1 250px;
+        background: linear-gradient(135deg, #ffa949, #f4dc8b);
+        border-radius: 10px;
+        padding: 20px;
+        color: #333;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        text-align: center;
+        position: relative;
+    }
+    .stat-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        color: #444;
+    }
+    .stat-value {
+        font-size: 26px;
+        font-weight: 900;
+        color: #fff;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .income-outcome {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        gap: 30px;
+        margin-bottom: 40px;
+        flex-wrap: wrap;
+    }
+    .io-box {
+        flex: 1 1 300px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        padding: 20px;
+        text-align: center;
+        position: relative;
+    }
+    .io-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        color: #555;
+    }
+    .io-value {
+        font-size: 28px;
+        font-weight: 900;
+        position: relative;
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    /* Up/Down arrow styling */
+    .arrow-up {
+        color: green;
+        font-size: 1.2em;
+    }
+    .arrow-down {
+        color: red;
+        font-size: 1.2em;
+    }
+
+    /* Custom text colors */
+    .green-text {
+        color: green;
+    }
+    .red-text {
+        color: red;
+    }
+
+    .chart-container {
+        margin: 20px auto;
+        max-width: 800px;
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid {
+            flex-direction: column;
+            align-items: center;
+        }
+        .income-outcome {
+            flex-direction: column;
+        }
+        .io-box {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="report-title">Store Report</h1>
+
+    <!-- (1) Display the Averages -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-title">Avg Salary</div>
+            <div class="stat-value">{{ avg_salary }} <span style="font-size:14px;">NIS</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Avg Order Paid</div>
+            <div class="stat-value">{{ avg_order_amount }} <span style="font-size:14px;">NIS</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Avg Supplier Movement</div>
+            <div class="stat-value">{{ avg_supplier_amount }} <span style="font-size:14px;">NIS</span></div>
+        </div>
+    </div>
+
+    <!-- (2) Income vs. Outcome section with color + arrows -->
+    <div class="income-outcome">
+        <!-- Income box -->
+        <div class="io-box">
+            <div class="io-title">Total Income</div>
+            <div class="io-value {{ income_color }}">
+                {{ total_income }}
+                {% if arrow_income_up %}
+                    <i class="fas fa-arrow-up arrow-up"></i>
+                {% else %}
+                    <i class="fas fa-arrow-down arrow-down"></i>
+                {% endif %}
+            </div>
+            <span style="font-size:14px;">NIS</span>
+        </div>
+        <!-- Outcome box -->
+        <div class="io-box">
+            <div class="io-title">Total Outcome</div>
+            <div class="io-value {{ outcome_color }}">
+                {{ total_outcome }}
+                {% if arrow_outcome_up %}
+                    <i class="fas fa-arrow-up arrow-up"></i>
+                {% else %}
+                    <i class="fas fa-arrow-down arrow-down"></i>
+                {% endif %}
+            </div>
+            <span style="font-size:14px;">NIS</span>
+        </div>
+    </div>
+
+    <!-- (3) Chart.js bar chart (Income vs. Outcome) -->
+    <div class="chart-container">
+        <canvas id="incomeOutcomeChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Basic chart to show Income vs. Outcome
+    const ctx = document.getElementById('incomeOutcomeChart').getContext('2d');
+    const income = {{ total_income }};
+    const outcome = {{ total_outcome }};
+
+    const myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Income', 'Outcome'],
+            datasets: [{
+                label: 'Store Finances (NIS)',
+                data: [income, outcome],
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.6)', // Income
+                    'rgba(255, 99, 132, 0.6)'  // Outcome
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)', 
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true }
+            },
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: {
+                    display: true,
+                    text: 'Income vs. Outcome'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
