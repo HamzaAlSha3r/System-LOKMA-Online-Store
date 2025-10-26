@@ -3,7 +3,10 @@ import pymysql
 import mysql.connector
 from mysql.connector import IntegrityError, Error
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, date
+from markupsafe import escape
+from decimal import Decimal, InvalidOperation
+import re
 
 app = Flask(__name__)
 app.secret_key = "hello"
@@ -16,6 +19,61 @@ conn = mysql.connector.connect(
 )
 mycursor_tuple = conn.cursor()
 mycursor_dict = conn.cursor(dictionary=True)
+
+# ------------------------------- input handling helpers (added)
+def _clean_str(val, max_len=255):
+    if val is None:
+        return ""
+    val = str(val).strip()
+    # remove control chars
+    val = re.sub(r"[\x00-\x1f\x7f]", "", val)
+    if len(val) > max_len:
+        val = val[:max_len]
+    return val
+
+def _to_int(val, default=None):
+    try:
+        return int(str(val).strip())
+    except (ValueError, TypeError):
+        return default
+
+def _to_float(val, default=None):
+    try:
+        return float(str(val).strip())
+    except (ValueError, TypeError):
+        return default
+
+def _to_decimal(val, default=None):
+    try:
+        return Decimal(str(val).strip())
+    except (InvalidOperation, ValueError, TypeError):
+        return default
+
+def _to_bool01(val):
+    if val is None:
+        return '0'
+    s = str(val).strip().lower()
+    return '1' if s in {'1','true','on','yes','y'} else '0'
+
+def _enum(val, allowed, default=None):
+    v = _clean_str(val)
+    return v if v in allowed else default
+
+def _ymd(val):
+    s = _clean_str(val)
+    try:
+        datetime.strptime(s, "%Y-%m-%d")
+        return s
+    except ValueError:
+        return None
+
+def _session_int(key):
+    return _to_int(session.get(key), None)
+
+def _session_str(key, max_len=255):
+    return _clean_str(session.get(key), max_len=max_len)
+
+# ----------------------------------------------------------------
 
 @app.route('/index')
 def hello():
@@ -33,7 +91,7 @@ def get_sweets():
         sweetsL = []
         sweetsL.clear()
         for s in sweets:
-            img_name = s[1].replace(" ", "").replace("_", "")
+            img_name = str(s[1]).replace(" ", "").replace("_", "")
             stu_der = {
                 "product_id": s[0],
                 "product_name": s[1],
@@ -59,7 +117,7 @@ def get_hot_drinks():
         hotDrinksL= []
         hotDrinksL.clear()
         for s in hotDrinks:
-            img_name = s[1].replace(" ", "").replace("_", "")
+            img_name = str(s[1]).replace(" ", "").replace("_", "")
             hot_der = {
                 "product_id": s[0],
                 "product_name": s[1],
@@ -85,7 +143,7 @@ def get_smothies():
         smothiesL= []
         smothiesL.clear()
         for s in smothies:
-            img_name = s[1].replace(" ", "").replace("_", "")
+            img_name = str(s[1]).replace(" ", "").replace("_", "")
             smo_der = {
                 "product_id": s[0],
                 "product_name": s[1],
@@ -111,7 +169,7 @@ def get_milks():
         milksL = []
         milksL.clear()
         for s in milks:
-            img_name = s[1].replace(" ", "").replace("_", "")
+            img_name = str(s[1]).replace(" ", "").replace("_", "")
             mil_der = {
                 "product_id": s[0],
                 "product_name": s[1],
@@ -138,7 +196,7 @@ def customer():
     hotDrinksL = session.get('hotDrinksL', get_hot_drinks())
     smothiesL = session.get('smothiesL', get_smothies())
     milksL = session.get('milksL', get_milks())
-    customer_id = session.get('customer_id')
+    customer_id = _session_int('customer_id')
     customer_name = get_customer_name(customer_id)
     
     return render_template('customerHome.html', sweetsL=sweetsL, hotDrinksL=hotDrinksL, smothiesL=smothiesL, milksL=milksL, customerName=customer_name)
@@ -146,12 +204,18 @@ def customer():
 @app.route('/cart',methods=['GET'])
 def cart():
     # this query gets the products in the current cart (order) for the current loged in customer
+    cid = _session_int('customer_id')
+    oid = _session_int('order_id')
+    if cid is None or oid is None:
+        flash("Please log in first.")
+        return render_template('login.html')
+
     getProductsQuery = '''SELECT P.product_id,P.product_name,OP.quantity,OP.sub_price,P.price
                           FROM Orders O
                           JOIN Order_Product OP ON O.order_id = OP.order_id
                           JOIN Products P ON OP.product_id = P.product_id
                           WHERE O.customer_id = %s AND O.order_id = %s'''
-    mycursor_tuple.execute(getProductsQuery, (session['customer_id'],session['order_id']))
+    mycursor_tuple.execute(getProductsQuery, (cid, oid))
     products = mycursor_tuple.fetchall()
     productsL = []
     for s in products:
@@ -169,18 +233,18 @@ def cart():
                           JOIN Order_Product OP ON O.order_id = OP.order_id
                           JOIN Products P ON OP.product_id = P.product_id
                           WHERE O.customer_id = %s AND O.order_id = %s;'''
-    mycursor_tuple.execute(getTotalPrice, (session['customer_id'],session['order_id']))
+    mycursor_tuple.execute(getTotalPrice, (cid, oid))
     totalPrice =  mycursor_tuple.fetchone()[0]
     if not totalPrice:
         totalPrice = 0
     # query to update the total_amount of the order , but still not payed
     updateOrderDetailsQuery = 'UPDATE Orders SET total_amount = %s WHERE order_id = %s'
-    mycursor_tuple.execute(updateOrderDetailsQuery, (totalPrice,session['order_id'],))
+    mycursor_tuple.execute(updateOrderDetailsQuery, (totalPrice, oid))
     # this query checks if there is old cards the current customer added and payed with 
     checkIfThereisOldPayMethodQuery = """Select pm.PaymentMethodID, cd.cardNum
                                          From PaymentMethod pm, CardDetails cd
                                          Where pm.PaymentMethodID = cd.PaymentMethodID AND pm.MethodType Like 'Credit Card' AND pm.customer_id=%s"""
-    mycursor_tuple.execute(checkIfThereisOldPayMethodQuery, (session['customer_id'],))
+    mycursor_tuple.execute(checkIfThereisOldPayMethodQuery, (cid,))
     methods = mycursor_tuple.fetchall()
     methodsL = []
     for m in methods:
@@ -191,65 +255,77 @@ def cart():
         methodsL.append(payM_der)
 
     conn.commit()
-    return render_template('customerCart.html',order_id=session['order_id'],productsL=productsL,totalPrice=totalPrice,methodsL=methodsL)
+    return render_template('customerCart.html',order_id=oid,productsL=productsL,totalPrice=totalPrice,methodsL=methodsL)
 
 @app.route('/cart/pay',methods=['POST'])
 def payOrder():
     # this query just to make sure the cart is not empty , so it dont make since to pay a empty cart 
+    cid = _session_int('customer_id')
+    oid = _session_int('order_id')
+    if cid is None or oid is None:
+        flash("Please log in first.")
+        return render_template('login.html')
+
     checkIfCartEmptyQuery = '''SELECT P.product_id
                                FROM Orders O
                                JOIN Order_Product OP ON O.order_id = OP.order_id
                                JOIN Products P ON OP.product_id = P.product_id
                                WHERE O.customer_id = %s AND O.order_id = %s'''
-    mycursor_tuple.execute(checkIfCartEmptyQuery, (session['customer_id'],session['order_id']))
+    mycursor_tuple.execute(checkIfCartEmptyQuery, (cid, oid))
     checkresult = mycursor_tuple.fetchall()
     if not checkresult:
         flash("Your Cart is Empty, nothing to pay for ")
         return redirect(url_for('cart'))
     # now getting the choosed paymentMethod form the customer to pay with  
-    payMethod = request.form['payment_method']
+    payMethod_raw = request.form.get('payment_method', '')
+    payMethod = _enum(payMethod_raw, {'Cash','Credit Card'}, None)
     if payMethod == 'Cash':
         # inserting the payment to the PaymentMethod tabel and get the payment id
         addPaymentQuery = 'Insert into PaymentMethod (customer_id, MethodType) values (%s,"Cash")'
-        mycursor_tuple.execute(addPaymentQuery, (session['customer_id'],))
+        mycursor_tuple.execute(addPaymentQuery, (cid,))
         getPayMethodIDQuery = """Select PaymentMethodID 
                                 From PaymentMethod 
                                 Where MethodType like %s and customer_id = %s
                                 Order by PaymentMethodID DESC"""
-        mycursor_tuple.execute(getPayMethodIDQuery, (payMethod,session['customer_id']))
+        mycursor_tuple.execute(getPayMethodIDQuery, (payMethod, cid))
         payMethodID = mycursor_tuple.fetchone()[0]
         print(payMethodID)
         mycursor_tuple.fetchall() # just to clear the cursor
     elif payMethod == 'Credit Card': 
         # this for adding a new card to pay with ,getting the card data and insert it to PaymentMethod and CardDetails tabels
-        cardNum = request.form['card_number']
-        expiryDate = request.form['expiry_date']
-        cvv = request.form['cvv']
+        cardNum = _clean_str(request.form.get('card_number'), max_len=32)
+        expiryDate = _clean_str(request.form.get('expiry_date'), max_len=10)
+        cvv = _clean_str(request.form.get('cvv'), max_len=4)
         addPaymentQuery = 'Insert Into PaymentMethod (customer_id, MethodType) values (%s,"Credit Card")'
-        mycursor_tuple.execute(addPaymentQuery, (session['customer_id'],))
+        mycursor_tuple.execute(addPaymentQuery, (cid,))
         addCardDeailsQuery = """Insert Into CardDetails (cardNum,cardcvv,expiryDate,paymentMethodID) values (%s,%s,%s,LAST_INSERT_ID())"""
-        mycursor_tuple.execute(addCardDeailsQuery, (cardNum,cvv,expiryDate))
+        mycursor_tuple.execute(addCardDeailsQuery, (cardNum, cvv, expiryDate))
         getPayMethodIDQuery ="""Select pm.PaymentMethodID 
                                 From PaymentMethod pm,CardDetails cd 
                                 Where pm.paymentMethodID = cd.paymentMethodID AND pm.MethodType like %s and pm.customer_id = %s and cd.cardnum=%s"""
-        mycursor_tuple.execute(getPayMethodIDQuery, (payMethod,session['customer_id'],cardNum))
+        mycursor_tuple.execute(getPayMethodIDQuery, (payMethod, cid, cardNum))
         payMethodID = mycursor_tuple.fetchone()[0]
         print(payMethodID)
         mycursor_tuple.fetchall()
     else : # this for paying with an old card , payMethodID stored in the html as a input
-        payMethodID = request.form['payment_method']
+        payMethodID = _to_int(payMethod_raw, None)
+        if payMethodID is None:
+            flash("Invalid payment method.")
+            return redirect(url_for('cart'))
 
     # adding the payment record to  Payments_order tabel to , mark this order as a payed order 
+    total_price_str = request.form.get('totalPrice')
+    total_price = _to_decimal(total_price_str, Decimal('0'))
     payTheOrderQuery = "INSERT INTO Payments_order (OrderID, PaymentMethodID, PaymentDate, Amount) VALUES (%s, %s, CURDATE(), %s);"
-    mycursor_tuple.execute(payTheOrderQuery, (session['order_id'],payMethodID,request.form['totalPrice']))
-    customerRating = request.form.get("rate")
+    mycursor_tuple.execute(payTheOrderQuery, (oid, payMethodID, str(total_price)))
+    customerRating = _to_int(request.form.get("rate"), None)
     customerRatingQuery = 'UPDATE Orders SET rating = %s WHERE order_id = %s'
-    mycursor_tuple.execute(customerRatingQuery, (customerRating,session['order_id'],))
+    mycursor_tuple.execute(customerRatingQuery, (customerRating, oid))
     conn.commit()
     # creating a new order (cart) for the current customer 
-    create_order(session['customer_id'])
+    create_order(cid)
     getOrderIDQuery = 'Select order_id From Orders Where customer_id = %s Order by order_id DESC'
-    mycursor_tuple.execute(getOrderIDQuery,(session['customer_id'],))
+    mycursor_tuple.execute(getOrderIDQuery,(cid,))
     orderID = mycursor_tuple.fetchone()[0]
     mycursor_tuple.fetchall()
     session['order_id'] = orderID
@@ -258,6 +334,11 @@ def payOrder():
 @app.route('/orders_history')
 def customerOrdersHistory():
     # join with Payments_order, PaymentMethod, CardDetails to get all the information of the order that was placed using Cards (not Cash)
+    cid = _session_int('customer_id')
+    if cid is None:
+        flash("Please log in first.")
+        return redirect(url_for('login'))
+
     getCustOrdersWithCardQuery = """SELECT o.order_id, o.total_amount, o.rating, po.PaymentDate, p.MethodType, cd.cardnum
                             FROM Orders o
                             JOIN Payments_order po ON o.order_id = po.OrderID
@@ -265,7 +346,7 @@ def customerOrdersHistory():
                             JOIN CardDetails cd ON cd.PaymentMethodID = p.PaymentMethodID
                             WHERE o.customer_id = %s 
                             Order by po.PaymentDate"""
-    mycursor_tuple.execute(getCustOrdersWithCardQuery,(session['customer_id'],))
+    mycursor_tuple.execute(getCustOrdersWithCardQuery,(cid,))
     orders = mycursor_tuple.fetchall()
     ordersL = []
     for o in orders:
@@ -285,7 +366,7 @@ def customerOrdersHistory():
                             JOIN PaymentMethod p ON po.PaymentMethodID = p.PaymentMethodID
                             WHERE o.customer_id = %s AND p.MethodType Like 'Cash'
                             Order by po.PaymentDate"""
-    mycursor_tuple.execute(getCustOrdersWithCashQuery,(session['customer_id'],))
+    mycursor_tuple.execute(getCustOrdersWithCashQuery,(cid,))
     orders2 = mycursor_tuple.fetchall()
     for o in orders2:
         ord_der={
@@ -297,7 +378,7 @@ def customerOrdersHistory():
             'cardnum' : '---'
         }
         ordersL.append(ord_der)
-    return render_template('customerOrdersHistory.html',customerName=session['customer_name'],ordersL=ordersL)
+    return render_template('customerOrdersHistory.html',customerName=session.get('customer_name'),ordersL=ordersL)
 
 @app.route('/employee/add_new_product')
 def addNewProduct():
@@ -305,7 +386,7 @@ def addNewProduct():
         flash("Unauthorized access. Only employees can add sweets.")
         return render_template('error.html')
     else:
-        empID = session['employee_id']
+        empID = _session_int('employee_id')
         query = "SELECT emp_name FROM Employees WHERE emp_id=%s"
         mycursor_tuple.execute(query, (empID,))
         empName = mycursor_tuple.fetchone()[0]
@@ -322,16 +403,21 @@ def insert_sweet():
         return render_template('insertProduct.html')
     # getting the product data from the html form 
     if request.method == 'POST':
-        product_id = request.form['product_id']
-        product_name = request.form['product_name']
-        price = request.form['price']
-        nuts_type = request.form['nuts_type']
-        chocolate_type = request.form.get('chocolate_type', '0')  
-        emp_id = session.get('employee_id')
+        product_id = _to_int(request.form.get('product_id'), None)
+        product_name = _clean_str(request.form.get('product_name'), max_len=120)
+        price = _to_decimal(request.form.get('price'), Decimal('0'))
+        nuts_type = _clean_str(request.form.get('nuts_type'), max_len=64)
+        chocolate_type = _clean_str(request.form.get('chocolate_type', '0'), max_len=64)  
+        emp_id = _session_int('employee_id')
+
+        if product_id is None or product_name == "" or price is None:
+            flash("Invalid product input.")
+            return render_template('insertProduct.html')
+
         # inserting the sweet
         mycursor_tuple.execute('''INSERT INTO Products (product_id,product_name, price) 
                             VALUES (%s, %s, %s)''', 
-                        (product_id,product_name, price))
+                        (product_id, product_name, str(price)))
         conn.commit()
         mycursor_tuple.execute('''INSERT INTO Sweets (product_id, nuts_type, chocolate_type) 
                         VALUES (%s, %s, %s)''', 
@@ -356,16 +442,21 @@ def insert_drink():
         return render_template('insertProduct.html')
     # getting new drink information from the html form 
     if request.method == 'POST':
-        product_id = request.form['product_id']
-        product_name = request.form['product_name']
-        price = request.form['price']
-        state = request.form['state']
-        isSugarFree = request.form.get('is_sugar_free', '0')  
-        emp_id = session.get('employee_id')
+        product_id = _to_int(request.form.get('product_id'), None)
+        product_name = _clean_str(request.form.get('product_name'), max_len=120)
+        price = _to_decimal(request.form.get('price'), Decimal('0'))
+        state = _enum(request.form.get('state'), {'Hot','Smothie','Milk Shake','Cold'}, None)
+        isSugarFree = _to_bool01(request.form.get('is_sugar_free', '0'))  
+        emp_id = _session_int('employee_id')
+
+        if product_id is None or product_name == "" or price is None or state is None:
+            flash("Invalid drink input.")
+            return render_template('insertProduct.html')
+
         # add the new Drink
         mycursor_tuple.execute('''INSERT INTO Products (product_id,product_name, price) 
                             VALUES (%s, %s, %s)''', 
-                        (product_id,product_name, price))
+                        (product_id, product_name, str(price)))
         conn.commit()
         mycursor_tuple.execute('''INSERT INTO Drinks (product_id, state, is_Sugar_Free) 
                         VALUES (%s, %s, %s)''', 
@@ -383,7 +474,7 @@ def buy_from_supplier():
     if session.get('user_type') != 'Employee':
         flash("Unauthorized access. Only employees can add sweets.")
         return render_template('error.html')
-    empID = session['employee_id']
+    empID = _session_int('employee_id')
     query = "SELECT emp_name FROM Employees WHERE emp_id=%s"
     mycursor_tuple.execute(query, (empID,))
     empName = mycursor_tuple.fetchone()[0]
@@ -405,7 +496,10 @@ def buy_from_supplier():
 
 @app.route('/employee/getSupplierProducts',methods=['POST'])
 def getSelectedSupplierProducts():
-    supplierID =  request.form.get('supplierName')
+    supplierID = _to_int(request.form.get('supplierName'), None)
+    if supplierID is None:
+        flash("Invalid supplier.")
+        return redirect(url_for('buy_from_supplier'))
     getSelectedSupplierProductsQuery = """Select product_name 
                                           From Supplier_Products
                                           Where supplier_id = %s"""
@@ -418,23 +512,26 @@ def getSelectedSupplierProducts():
         }
         productsL.append(der)
     print(productsL)
-    empID = session['employee_id']
+    empID = _session_int('employee_id')
     query = "SELECT emp_name FROM Employees WHERE emp_id=%s"
     mycursor_tuple.execute(query, (empID,))
     empName = mycursor_tuple.fetchone()[0]
-    return render_template('buyFromSupplierAfter.html',empName=empName,empID=empID,suppliersL=session['suppliersL'],productsL=productsL,supplierID=supplierID)
+    return render_template('buyFromSupplierAfter.html',empName=empName,empID=empID,suppliersL=session.get('suppliersL',[]),productsL=productsL,supplierID=supplierID)
 
 @app.route('/employee/PlaceOrderFromSupplier',methods=['POST'])
 def placeOrderFromSupplier():
     if request.method == 'POST':
-        supplierID = request.form['supplierName']
-        quantity = request.form['quantity']
-        productName = request.form['product_name']
-        emp_id = session.get('employee_id')
+        supplierID = _to_int(request.form.get('supplierName'), None)
+        quantity = _to_int(request.form.get('quantity'), None)
+        productName = _clean_str(request.form.get('product_name'), max_len=120)
+        emp_id = _session_int('employee_id')
+        if supplierID is None or quantity is None or productName == "":
+            flash("Invalid supplier order input.")
+            return redirect(url_for('buy_from_supplier'))
         # employee buying operations from suplliers recorded in the Suppliers_Buy tabel
         addingTheBuyQuery = """INSERT INTO Suppliers_Buy (quantity, emp_id, buy_date, supplier_id) 
                                 VALUES (%s,%s,CURDATE(),%s)"""
-        mycursor_tuple.execute(addingTheBuyQuery, (quantity,emp_id,supplierID))
+        mycursor_tuple.execute(addingTheBuyQuery, (quantity, emp_id, supplierID))
         conn.commit()
         return redirect(url_for('buy_from_supplier'))
 
@@ -444,13 +541,17 @@ def addSweetToCustomerCart() :
         if session.get('user_type',None) != 'Customer':
             flash("You need to login before you add to your cart,.")
             return render_template('login.html')
-        orderID = session.get('order_id')
+        orderID = _session_int('order_id')
         if not orderID:
             flash("No active order found. Please start a new order.")
             return render_template('login.html')
         
-        quantity = request.form.get('quantity')
-        productID = request.form.get('product_id')
+        quantity = _to_int(request.form.get('quantity'), None)
+        productID = _to_int(request.form.get('product_id'), None)
+        if quantity is None or productID is None:
+            flash('Invalid item input.')
+            return redirect(url_for('customer'))
+
         checkIfInCartQuery = """ Select quantity 
                                  From Order_Product 
                                  Where order_id= %s AND product_id= %s """
@@ -459,7 +560,7 @@ def addSweetToCustomerCart() :
         if quantityInCart :
             existingQuantity = quantityInCart[0]
             newQuantity = existingQuantity + int(quantity)
-            productPrice = request.form.get('price')
+            productPrice = _to_decimal(request.form.get('price'), None)
             if productPrice is not None:
                 subPrice = float(productPrice) * newQuantity
             else:
@@ -474,15 +575,15 @@ def addSweetToCustomerCart() :
             return redirect(url_for('customer'))
         else:
             if productID:
-                productPrice = request.form.get('price')
+                productPrice = _to_decimal(request.form.get('price'), None)
                 print('productPrice = ')
                 print(productPrice)
                 subPrice = 0
-                if productPrice is not None:
+                if productPrice is not None and quantity is not None:
                     subPrice = float(productPrice) * int(quantity)
                 else:
                     subPrice = 0  
-                orderID = session['order_id']
+                orderID = _session_int('order_id')
                 addSweetToCartQuery='INSERT INTO Order_Product (order_id, product_id, sub_price, quantity) Values (%s, %s, %s, %s)'
                 print('added to CART')
                 mycursor_tuple.execute(addSweetToCartQuery,(orderID,productID,subPrice,quantity))
@@ -496,13 +597,17 @@ def addDrinkToCustomerCart() :
         if session.get('user_type',None) != 'Customer':
             flash("You need to login before you add to your cart,.")
             return render_template('login.html')
-        orderID = session.get('order_id')
+        orderID = _session_int('order_id')
         if not orderID:
             flash("No active order found. Please start a new order.")
             return render_template('login.html')
 
-        quantity = request.form.get('quantity')
-        productID = request.form.get('product_id')
+        quantity = _to_int(request.form.get('quantity'), None)
+        productID = _to_int(request.form.get('product_id'), None)
+        if quantity is None or productID is None:
+            flash('Invalid item input.')
+            return redirect(url_for('customer'))
+
         checkIfInCartQuery = """ Select quantity 
                                  From Order_Product 
                                  Where order_id= %s AND product_id= %s """
@@ -511,7 +616,7 @@ def addDrinkToCustomerCart() :
         if quantityInCart :
             existingQuantity = quantityInCart[0]
             newQuantity = existingQuantity + int(quantity)
-            productPrice = request.form.get('price')
+            productPrice = _to_decimal(request.form.get('price'), None)
             if productPrice is not None:
                 subPrice = float(productPrice) * newQuantity
             else:
@@ -526,15 +631,15 @@ def addDrinkToCustomerCart() :
             return redirect(url_for('customer'))
         else:
             if productID:
-                productPrice = request.form.get('price')
+                productPrice = _to_decimal(request.form.get('price'), None)
                 print('productPrice = ')
                 print(productPrice)
                 subPrice = 0
-                if productPrice is not None:
+                if productPrice is not None and quantity is not None:
                     subPrice = float(productPrice) * int(quantity)
                 else:
                     subPrice = 0  
-                orderID = session['order_id']
+                orderID = _session_int('order_id')
                 addSweetToCartQuery='INSERT INTO Order_Product (order_id, product_id, sub_price, quantity) Values (%s, %s, %s, %s)'
                 print('added to CART')
                 mycursor_tuple.execute(addSweetToCartQuery,(orderID,productID,subPrice,quantity))
@@ -549,12 +654,12 @@ def removeProductFromCart():
         flash("You need to log in to modify your cart.")
         return render_template('login.html')
 
-    orderID = session.get('order_id')
+    orderID = _session_int('order_id')
     if not orderID:
         flash("No active order found.")
         return render_template('login.html')
 
-    productID = request.form.get('product_id')
+    productID = _to_int(request.form.get('product_id'), None)
     if not productID:
         flash("Product ID is required to remove an item from the cart.")
         return redirect(url_for('cart'))
@@ -575,7 +680,7 @@ def employeeHome():
         flash("Unauthorized access. Only employees can add sweets.")
         return render_template('error.html')
     else:
-        empID = session.get('employee_id')
+        empID = _session_int('employee_id')
         empName = session.get('employee_name')
         salary = session.get('salary')
         getSweetsQuery = """Select p.product_id,p.product_name,p.price,s.nuts_type,s.chocolate_type 
@@ -640,8 +745,8 @@ def login():
     session.clear() 
     if request.method == 'GET':
         return render_template('login.html')
-    email = request.form['email']
-    password = request.form['password']
+    email = _clean_str(request.form.get('email'))
+    password = _clean_str(request.form.get('password'))
 
     if not conn:
         flash("Database connection error.")
@@ -693,7 +798,7 @@ def login():
     
 @app.route('/manager_dashboard')
 def manager_dashboard():
-    employee_id = session.get('employee_id')
+    employee_id = _session_int('employee_id')
     if not employee_id:
         flash("Manager information is missing.")
         return redirect(url_for('login'))
@@ -722,7 +827,8 @@ from datetime import datetime
 def order_management():
     from datetime import date, datetime
     search_type = request.form.get('search_type', 'current_date')
-    search_value = request.form.get('search_value', '').strip()
+    search_value_raw = request.form.get('search_value', '')
+    search_value = _clean_str(search_value_raw, max_len=128)
 
     base_query = """
         SELECT 
@@ -751,18 +857,23 @@ def order_management():
         pass
 
     elif search_type == 'date':
-        try:
-            datetime.strptime(search_value, "%Y-%m-%d")
+        sv_date = _ymd(search_value)
+        if sv_date:
             conditions.append("Payments_order.PaymentDate = %s")
-            params.append(search_value)
-        except ValueError:
+            params.append(sv_date)
+        else:
             flash("Invalid date format. Use YYYY-MM-DD.")
             return render_template('order_management.html',
                                    orders=[], total_orders=0, total_amount=0)
 
     elif search_type == 'payment_method':
+        pm = _enum(search_value, {'Cash','Credit Card'}, None)
+        if pm is None:
+            flash("Invalid payment method.")
+            return render_template('order_management.html',
+                                   orders=[], total_orders=0, total_amount=0)
         conditions.append("PaymentMethod.MethodType = %s")
-        params.append(search_value)
+        params.append(pm)
 
     elif search_type == 'customer_name':
         conditions.append("Customers.customer_name LIKE %s")
@@ -775,24 +886,22 @@ def order_management():
         conditions.append("Payments_order.Amount = (SELECT MIN(Amount) FROM Payments_order)")
 
     elif search_type == 'greater_than':
-        try:
-            val = float(search_value)
-            conditions.append("Payments_order.Amount > %s")
-            params.append(val)
-        except ValueError:
+        val = _to_float(search_value, None)
+        if val is None:
             flash("Invalid value for Greater Than search. Please enter a numeric value.")
             return render_template('order_management.html',
                                    orders=[], total_orders=0, total_amount=0)
+        conditions.append("Payments_order.Amount > %s")
+        params.append(val)
 
     elif search_type == 'less_than':
-        try:
-            val = float(search_value)
-            conditions.append("Payments_order.Amount < %s")
-            params.append(val)
-        except ValueError:
+        val = _to_float(search_value, None)
+        if val is None:
             flash("Invalid value for Less Than search. Please enter a numeric value.")
             return render_template('order_management.html',
                                    orders=[], total_orders=0, total_amount=0)
+        conditions.append("Payments_order.Amount < %s")
+        params.append(val)
 
     if conditions:
         base_query += " WHERE " + " AND ".join(conditions)
@@ -830,20 +939,19 @@ def order_management():
 @app.route('/manager_dashboard/employee_management', methods=['GET', 'POST'])
 def employee_management():
     if request.method == 'POST':
-        emp_name = request.form.get('emp_name', '').strip()
-        phone = request.form.get('phone', '').strip()
-        address = request.form.get('address', '').strip()
-        salary_str = request.form.get('salary', '').strip()
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '').strip()
+        emp_name = _clean_str(request.form.get('emp_name'), max_len=120)
+        phone = _clean_str(request.form.get('phone'), max_len=32)
+        address = _clean_str(request.form.get('address'), max_len=255)
+        salary_str = _clean_str(request.form.get('salary'), max_len=16)
+        email = _clean_str(request.form.get('email'), max_len=255)
+        password = _clean_str(request.form.get('password'), max_len=255)
 
         if not emp_name or not phone or not address or not salary_str or not email or not password:
             flash("All fields are required to add a new employee.")
             return redirect(url_for('employee_management'))
 
-        try:
-            salary = int(salary_str)
-        except ValueError:
+        salary = _to_int(salary_str, None)
+        if salary is None:
             flash("Salary must be an integer.")
             return redirect(url_for('employee_management'))
 
@@ -859,7 +967,7 @@ def employee_management():
             INSERT INTO EmployeeLogin (Email, PasswordHash,EmployeeID)
             VALUES (%s, %s, %s)
         """
-        mycursor_tuple.execute(insert_login_query, (email, password,new_emp_id))
+        mycursor_tuple.execute(insert_login_query, (email, password, new_emp_id))
         conn.commit()
 
         flash(f"New Employee '{emp_name}' added successfully!")
@@ -920,14 +1028,13 @@ def delete_employee(emp_id):
 
 @app.route('/manager_dashboard/employee_management/update_salary/<int:emp_id>', methods=['POST'])
 def update_employee_salary(emp_id):
-    new_salary_str = request.form.get('new_salary', '').strip()
+    new_salary_str = _clean_str(request.form.get('new_salary'), max_len=16)
     if not new_salary_str:
         flash("Please enter a salary to update.")
         return redirect(url_for('employee_management'))
     
-    try:
-        new_salary = int(new_salary_str)
-    except ValueError:
+    new_salary = _to_int(new_salary_str, None)
+    if new_salary is None:
         flash("Salary must be an integer.")
         return redirect(url_for('employee_management'))
     
@@ -942,13 +1049,13 @@ def update_employee_salary(emp_id):
 @app.route('/manager_dashboard/supplier_management', methods=['GET', 'POST'])
 def supplier_management():
     if request.form.get('action') == 'add_supplier':
-        supplier_name = request.form.get('supplier_name', '').strip()
-        product_name = request.form.get('product_name', '').strip()
-        product_price = request.form.get('product_price', '').strip()
-        phone = request.form.get('phone', '').strip()
-        address = request.form.get('address', '').strip()
+        supplier_name = _clean_str(request.form.get('supplier_name'), max_len=120)
+        product_name = _clean_str(request.form.get('product_name'), max_len=120)
+        product_price = _to_decimal(request.form.get('product_price'), None)
+        phone = _clean_str(request.form.get('phone'), max_len=32)
+        address = _clean_str(request.form.get('address'), max_len=255)
 
-        if not supplier_name or not product_name or not phone or not address or not product_price:
+        if not supplier_name or not product_name or not phone or not address or product_price is None:
             flash("All fields are required.")
             return redirect(url_for('supplier_management'))
 
@@ -965,7 +1072,7 @@ def supplier_management():
                 INSERT INTO Supplier_Products (supplier_id, product_name, price)
                 VALUES (%s, %s, %s)
             """
-            mycursor_tuple.execute(insert_product_query, (new_supplier_id, product_name, product_price))
+            mycursor_tuple.execute(insert_product_query, (new_supplier_id, product_name, str(product_price)))
             conn.commit()
 
             flash(f"New Supplier '{supplier_name}' and Product '{product_name}' added successfully!")
@@ -974,11 +1081,11 @@ def supplier_management():
         return redirect(url_for('supplier_management'))
 
     if request.form.get('action') == 'update_supplier':
-        supp_id = request.form.get('supp_id', '').strip()
-        new_phone = request.form.get('new_phone', '').strip()
-        new_address = request.form.get('new_address', '').strip()
-        new_product_name = request.form.get('new_product_name', '').strip()
-        new_product_price = request.form.get('new_product_price', '').strip()
+        supp_id = _to_int(request.form.get('supp_id'), None)
+        new_phone = _clean_str(request.form.get('new_phone'), max_len=32)
+        new_address = _clean_str(request.form.get('new_address'), max_len=255)
+        new_product_name = _clean_str(request.form.get('new_product_name'), max_len=120)
+        new_product_price = _to_decimal(request.form.get('new_product_price'), None)
 
         if not supp_id:
             flash("Invalid supplier ID.")
@@ -999,12 +1106,12 @@ def supplier_management():
                 mycursor_tuple.execute(update_supplier_query, params)
                 conn.commit()
 
-            if new_product_name and new_product_price:
+            if new_product_name and new_product_price is not None:
                 insert_product_query = """
                     INSERT INTO Supplier_Products (supplier_id, product_name, price)
                     VALUES (%s, %s, %s)
                 """
-                mycursor_tuple.execute(insert_product_query, (supp_id, new_product_name, new_product_price))
+                mycursor_tuple.execute(insert_product_query, (supp_id, new_product_name, str(new_product_price)))
                 conn.commit()
         except Exception as e:
             flash(f"Error updating supplier: {e}")
@@ -1012,7 +1119,7 @@ def supplier_management():
 
     # Search Parameters
     search_type = request.form.get('search_type', 'all')
-    search_value = request.form.get('search_value', '').strip()
+    search_value = _clean_str(request.form.get('search_value', ''), max_len=128)
 
     base_query = """
         SELECT 
@@ -1152,11 +1259,11 @@ def signup():
     if request.method == 'GET':
         return render_template('SignUp.html')
     else:
-        name = request.form['name'].strip()
-        phone = request.form['phoneNum'].strip()
-        address = request.form['address'].strip()
-        email = request.form['email'].strip()
-        password = request.form['pass'].strip()
+        name = _clean_str(request.form.get('name'))
+        phone = _clean_str(request.form.get('phoneNum'))
+        address = _clean_str(request.form.get('address'))
+        email = _clean_str(request.form.get('email'))
+        password = _clean_str(request.form.get('pass'))
         
         if not conn:
             flash("Database connection error.")
@@ -1203,6 +1310,7 @@ def setup_user_session(user):
     session['customer_id'] = user['CustomerID']
 
 def get_user_by_email(email):
+    email = _clean_str(email)
     checkIfManagerQuery = """SELECT el.Email,el.PasswordHash,el.EmployeeID,e.emp_name,e.emp_role
                             FROM EmployeeLogin el
                             JOIN Employees e ON el.EmployeeID = e.emp_id
@@ -1264,18 +1372,23 @@ def create_order(customer_id):
     conn.commit()
 
 def get_customer_name(customer_id):
+    if customer_id is None:
+        return None
     query = "SELECT customer_name FROM Customers WHERE customer_id = %s"
     mycursor_tuple.execute(query, (customer_id,))
     result = mycursor_tuple.fetchone()
-    session['customer_name'] = result[0]
+    session['customer_name'] = result[0] if result else None
     return result[0] if result else None
 
 def checkIfThereIsUnpayedCart():
+    cid = _session_int('customer_id')
+    if cid is None:
+        return None
     checkIfThereIsUnPayedCartQuery = """ SELECT o.order_id
                                          FROM Orders o
                                          WHERE o.customer_id = %s AND o.order_id NOT IN (SELECT OrderID FROM Payments_order)
                                          order by o.order_id DESC"""
-    mycursor_tuple.execute(checkIfThereIsUnPayedCartQuery, (session['customer_id'],))
+    mycursor_tuple.execute(checkIfThereIsUnPayedCartQuery, (cid,))
     result = mycursor_tuple.fetchone()
     mycursor_tuple.fetchall()
     if not result :
